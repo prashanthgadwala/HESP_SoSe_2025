@@ -1,0 +1,49 @@
+#include "cli.cuh"
+#include <cstring>
+#include <iostream>
+
+void parse_command_line_args(int argc, char** argv, SimulationConfig& config) {
+
+    for (int i = 1; i < argc; ++i) {
+        if (strcmp(argv[i], "--dt") == 0 && i + 1 < argc)
+            config.dt = std::stof(argv[++i]);
+        else if (strcmp(argv[i], "--steps") == 0 && i + 1 < argc)
+            config.num_steps = std::stoi(argv[++i]);
+        else if (strcmp(argv[i], "--sigma") == 0 && i + 1 < argc)
+            config.sigma = std::stof(argv[++i]);
+        else if (strcmp(argv[i], "--epsilon") == 0 && i + 1 < argc)
+            config.epsilon = std::stof(argv[++i]);
+        else if (strcmp(argv[i], "--input") == 0 && i + 1 < argc)
+            config.input_file = argv[++i];
+        else if (strcmp(argv[i], "--output") == 0 && i + 1 < argc)
+            config.output_dir = argv[++i];
+        else if (strcmp(argv[i], "--freq") == 0 && i + 1 < argc)
+            config.output_freq = std::stoi(argv[++i]);
+        else if (strcmp(argv[i], "--benchmark") == 0)
+            config.benchmark = true;
+        else if (strcmp(argv[i], "--test") == 0 && i + 1 < argc) {
+            std::string val = argv[++i];
+            if (val == "stable") 
+                config.test_case = TestCaseType::STABLE;
+            else if (val == "repulsive") 
+                config.test_case = TestCaseType::REPULSIVE;
+            else if (val == "attractive") 
+                config.test_case = TestCaseType::ATTRACTIVE;
+        }
+        else if (strcmp(argv[i], "--help") == 0) {
+            std::cout << "Usage:\n"
+                      << "--dt <float>           Time step\n"
+                      << "--steps <int>          Number of steps\n"
+                      << "--sigma <float>        LJ sigma\n"
+                      << "--epsilon <float>      LJ epsilon\n"
+                      << "--input <path>         Input file\n"
+                      << "--output <dir>         Output directory\n"
+                      << "--freq <int>           VTK output frequency\n"
+                      << "--benchmark            Enable performance logging\n"
+                      << "--test <case>          Run predefined test case: stable | repel | attract\n";
+            exit(0);
+        } else {
+            std::cerr << "Unknown option: " << argv[i] << "\n";
+        }
+    }
+}
