@@ -1,3 +1,0 @@
-/home/srini/HESP_SoSe_2025/Assignment_2/molecular_dynamics/build/CMakeFiles/molecular_dynamics.dir
-/home/srini/HESP_SoSe_2025/Assignment_2/molecular_dynamics/build/CMakeFiles/edit_cache.dir
-/home/srini/HESP_SoSe_2025/Assignment_2/molecular_dynamics/build/CMakeFiles/rebuild_cache.dir

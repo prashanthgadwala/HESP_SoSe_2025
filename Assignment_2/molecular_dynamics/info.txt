@@ -1,8 +1,0 @@
-
-# interesting test cases for checking them.
-python3 generate_input.py --case repulsive_shell --points_on_shell 200 --radius 1.0 --output particles
-python3 generate_input.py --case repulsive_shell --points_on_shell 200 --radius 1.0 --output particles
-python3 generate_input.py --case attractive_core --cluster_count 300 --spacing 0.02 --output particles
-
-# Generates number of particles equally spaced. spacing can be adjusted, if need be edit the position of particles directly in the file.
-python3 generate_input.py --counts 100 500 1000 2000 5000 10000 --spacing 0.1 --output particles
