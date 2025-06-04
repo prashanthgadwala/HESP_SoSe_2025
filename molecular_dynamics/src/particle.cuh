@@ -31,6 +31,17 @@ struct Vector3 {
         return *this;
     }
 
+    __host__ __device__ Vector3& operator=(const Vector3& rhs) {
+        x = rhs.x; y = rhs.y; z = rhs.z;
+        return *this;
+    }
+
+    __host__ __device__ float& operator[](int i) {
+        if (i == 0) return x;
+        else if (i == 1) return y;
+        else return z;
+    }
+
     __host__ __device__ float norm() const {
         return sqrtf(x*x + y*y + z*z);
     }
@@ -38,6 +49,7 @@ struct Vector3 {
     __host__ __device__ float squaredNorm() const {
         return x*x + y*y + z*z;
     }
+
 };
 
 struct Particle {
@@ -46,6 +58,10 @@ struct Particle {
     Vector3 force;
     Vector3 acceleration; 
     float mass;
+};
+
+struct Grid{
+
 };
 
 void load_particles_from_file(const std::string& filename, Particle*& particles, int& num_particles);
@@ -58,9 +74,9 @@ __host__ void print_particles(const Particle* particles, int num_particles);
 
 __host__ void print_diagnostics(const Particle* particles, int num_particles);
 
-__host__ void run_simulation(Particle* particles, int num_particles, float dt, float sigma, float epsilon);
+__host__ void run_simulation(Particle* particles, int num_particles, float dt, float sigma, float epsilon, float rcut, float box_size[]);
 
-__global__ void compute_lj_forces(Particle* particles, int num_particles);
+__global__ void compute_lj_forces(Particle* particles, int num_particles, float rcut, float box_size[]);
 
 __global__ void apply_forces(Particle* particles, int num_particles);
 

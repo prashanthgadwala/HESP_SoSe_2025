@@ -5,6 +5,7 @@
 #include <vector>
 #include <stdexcept>
 
+
 void load_particles_from_file(const std::string& filename, Particle*& particles, int& num_particles) {
     std::ifstream file(filename);
     if (!file.is_open()) {
@@ -79,56 +80,79 @@ __host__ void print_particles(const Particle* particles, int num_particles) {
 }
 
 
-__global__ void velocity_verlet_step1(Particle* particles, int num_particles, float dt) {
+__global__ void velocity_verlet_step1(Particle* particles, int num_particles, float dt, float box_size[]) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < num_particles) {
+        auto& p = particles[i];
         // Store current acceleration
-        particles[i].acceleration = particles[i].force / particles[i].mass;
+        p.acceleration = (p.force / p.mass);
         
         // Update position: x(t+dt) = x(t) + v(t)*dt + 0.5*a(t)*dt^2
-        particles[i].position += particles[i].velocity * dt + particles[i].acceleration * (0.5f * dt * dt);
+        p.position += p.velocity * dt + p.acceleration * (0.5f * dt * dt);   
+
+        // Apply periodic boundary conditions
+        for (int d = 0; d < 3; ++d) {
+            if (p.position[d] < 0.0f)
+                p.position[d] += box_size[d];
+            else if (p.position[d] >= box_size[d])
+                p.position[d] -= box_size[d];
+        }
     }
 }
 
 __global__ void velocity_verlet_step2(Particle* particles, int num_particles, float dt) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < num_particles) {
-        Vector3 a_new = particles[i].force / particles[i].mass;
+        auto& p = particles[i];
+
+        Vector3 a_new = p.force / p.mass;
         
         // Update velocity: v(t+dt) = v(t) + 0.5*(a(t) + a(t+dt))*dt
-        particles[i].velocity += (particles[i].acceleration + a_new) * (0.5f * dt);
+        p.velocity += (p.acceleration + a_new) * (0.5f * dt);
         
         // Store new acceleration for next step
-        particles[i].acceleration = a_new;
+        p.acceleration = a_new;
     }
 }
 
-__global__ void compute_lj_forces(Particle* particles, int num_particles, float sigma, float epsilon) {
+__global__ void compute_lj_forces(Particle* particles, int num_particles, float sigma, float epsilon, float rcut, float box_size[]) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= num_particles) return;
 
     Vector3 total_force(0.0f, 0.0f, 0.0f);
 
+    float rcut_sq = rcut * rcut;
+
     for (int j = 0; j < num_particles; ++j) {
         if ((i != j)) 
         {
             Vector3 rij = particles[j].position - particles[i].position;
+            // Apply minimum image convention
+            for (int d = 0; d < 3; ++d) {
+                float box_d = box_size[d];
+                if (rij[d] >  0.5f * box_d) rij[d] -= box_d;
+                if (rij[d] < -0.5f * box_d) rij[d] += box_d;
+            }
+
             float r2 = rij.squaredNorm();
-            float r = sqrtf(r2);
-            float inv_r2 = 1.0f / r2;
-            float sigma2 = sigma * sigma;
-            float term = sigma2 * inv_r2;          // (sigma/r)^2
-            float B_m = term * term * term;        // (sigma/r)^6
-            float A_n = B_m * B_m;                 // (sigma/r)^12
-            float f_mag = (24.0f * epsilon * (2.0f * A_n - B_m)) * inv_r2;
-            Vector3 f_dir = rij / r;
-            total_force += f_dir * f_mag;
+            if (rcut == 0.0f || r2 < rcut_sq)
+            {
+                float r = sqrtf(r2);
+                float inv_r2 = 1.0f / r2;
+                float sigma2 = sigma * sigma;
+                float term = sigma2 * inv_r2;          // (sigma/r)^2
+                float B_m = term * term * term;        // (sigma/r)^6
+                float A_n = B_m * B_m;                 // (sigma/r)^12
+                float f_mag = (24.0f * epsilon * (2.0f * A_n - B_m)) * inv_r2;
+                Vector3 f_dir = rij / r;
+                total_force += f_dir * f_mag;
+            }
         }
     }
     particles[i].force = total_force;
 }
 
-__host__ void run_simulation(Particle* particles, int num_particles, float dt, float sigma, float epsilon) {
+__host__ void run_simulation(Particle* particles, int num_particles, float dt, float sigma, float epsilon, float rcut, float box_size[]) {
     Particle* d_particles;
     size_t size = num_particles * sizeof(Particle);
     cudaMalloc(&d_particles, size);
@@ -139,13 +163,13 @@ __host__ void run_simulation(Particle* particles, int num_particles, float dt, f
 
     if (dt > 0.0f) {
         // Step 1: Position update only if dt is non-zero
-        velocity_verlet_step1<<<gridSize, blockSize>>>(d_particles, num_particles, dt);
+        velocity_verlet_step1<<<gridSize, blockSize>>>(d_particles, num_particles, dt, box_size);
         cudaDeviceSynchronize();
     }
 
     // Recompute forces (always done)
     //apply_forces<<<gridSize, blockSize>>>(d_particles, num_particles);
-    compute_lj_forces<<<gridSize, blockSize>>>(d_particles, num_particles, sigma, epsilon);
+    compute_lj_forces<<<gridSize, blockSize>>>(d_particles, num_particles, sigma, epsilon, rcut, box_size);
     cudaDeviceSynchronize();
 
     if (dt > 0.0f) {

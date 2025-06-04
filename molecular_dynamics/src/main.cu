@@ -98,6 +98,13 @@ int main(int argc, char** argv) {
         }
     }
 
+    float rcut;
+    if (config.method == MethodType::CUTOFF)
+    {
+        rcut = config.rcut;
+    }
+    else rcut = 0.0f;
+
     std::ofstream csv_file;
     bool log_csv = false;
     std::string csv_path;
@@ -127,7 +134,7 @@ int main(int argc, char** argv) {
     std::cout << "========== Simulation Configuration ==========\n";
 
     // Initial force computation (step 0)
-    run_simulation(particles, num_particles, 0.0f, config.sigma, config.epsilon);
+    run_simulation(particles, num_particles, 0.0f, config.sigma, config.epsilon, rcut, config.box_size);
 
     // Main simulation loop with proper timing
     for (int step = 0; step < config.num_steps; ++step) {
@@ -137,7 +144,7 @@ int main(int argc, char** argv) {
         }
 
         // Run the actual simulation step
-        run_simulation(particles, num_particles, config.dt, config.sigma, config.epsilon);
+        run_simulation(particles, num_particles, config.dt, config.sigma, config.epsilon, rcut, config.box_size);
 
         // End timing for this step
         if (log_csv) {

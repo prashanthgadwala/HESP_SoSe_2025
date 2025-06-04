@@ -30,6 +30,21 @@ void parse_command_line_args(int argc, char** argv, SimulationConfig& config) {
             else if (val == "attractive") 
                 config.test_case = TestCaseType::ATTRACTIVE;
         }
+        else if (strcmp(argv[i], "--box") == 0 && i + 3 < argc) {
+            config.box_size[0] = std::stof(argv[++i]);
+            config.box_size[1] = std::stof(argv[++i]);
+            config.box_size[2] = std::stof(argv[++i]);
+        }
+        else if (strcmp(argv[i], "--rcut") == 0 && i + 1 < argc) {
+            config.rcut = std::stof(argv[++i]);
+        }
+        else if (strcmp(argv[i], "--method") == 0 && i + 1 < argc) {
+            std::string m = argv[++i];
+            if (m == "base")        config.method = MethodType::BASE;
+            else if (m == "cutoff") config.method = MethodType::CUTOFF;
+            else if (m == "cell")   config.method = MethodType::CELL;
+        }
+
         else if (strcmp(argv[i], "--help") == 0) {
             std::cout << "Usage:\n"
                       << "--dt <float>           Time step\n"
@@ -40,7 +55,11 @@ void parse_command_line_args(int argc, char** argv, SimulationConfig& config) {
                       << "--output <dir>         Output directory\n"
                       << "--freq <int>           VTK output frequency\n"
                       << "--benchmark            Enable performance logging\n"
-                      << "--test <case>          Run predefined test case: stable | repel | attract\n";
+                      << "--test <case>          Run predefined test case: stable | repel | attract\n"
+                      << "--box <float 3>        Dimensions of the box boundary x, y and z\n"
+                      << "--rcut <float>         cutoff radius\n"
+                      << "--method               accelaration techniques\n";
+                      
             exit(0);
         } else {
             std::cerr << "Unknown option: " << argv[i] << "\n";
