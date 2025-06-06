@@ -99,7 +99,10 @@ __device__ bool in_grid_bounds(int3 coord, int3 dims);
 
 __global__ void compute_lj_forces_binned(Particle* particles, int num_particles, float sigma, float epsilon, float rcut, float box_size[], const DeviceBinningData bin_data, const Grid grid);
 
-__global__ void compute_lj_forces(Particle* particles, int num_particles, float sigma, float epsilon, float rcut, float box_size[]);
+__global__ void compute_lj_forces_rcut(Particle* particles, int num_particles, float sigma, float epsilon, float rcut, float box_size[]);
+
+__global__ void compute_lj_forces(Particle* particles, int num_particles, float sigma, float epsilon);
+
 
 // =====================
 // Utility (if needed)

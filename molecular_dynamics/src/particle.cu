@@ -52,11 +52,20 @@ void load_particles_from_file(const std::string& filename, Particle*& particles,
 
 
 __host__ void initialize_particles(Particle* particles, int num_particles, float spacing) {
-    for (int i = 0; i < num_particles; ++i) {
-        particles[i].position = Vector3(0.05f + i * spacing, 0.05f + i * spacing, 0.05f + i * spacing);
-        particles[i].velocity = Vector3(0.0f, 0.0f, 0.0f);
-        particles[i].force = Vector3(0.0f, 0.0f, 0.0f);
-        particles[i].mass = 10.0f;
+    int n = std::ceil(std::cbrt(num_particles));
+    int idx = 0;
+    for (int x = 0; x < n; ++x) {
+        for (int y = 0; y < n; ++y) {
+            for (int z = 0; z < n; ++z) {
+                if (idx < num_particles) {
+                    particles[idx].position = Vector3(0.2f + x * spacing, 0.2f + y * spacing, 0.2f + z * spacing);
+                    particles[idx].velocity = Vector3(0.0f, 0.0f, 0.0f);
+                    particles[idx].force = Vector3(0.0f, 0.0f, 0.0f);
+                    particles[idx].mass = 1.0f;
+                    idx++;
+                }
+            }
+        }
     }
 }
 
@@ -131,9 +140,33 @@ __device__ bool in_grid_bounds(int3 coord, int3 dims) {
            coord.z >= 0 && coord.z < dims.z;
 }
 
+__global__ void compute_lj_forces(Particle* particles, int num_particles, float sigma, float epsilon) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= num_particles) return;
 
-// this function was used before introducing cell binningm, it has cutoff radius implemented
-__global__ void compute_lj_forces(Particle* particles, int num_particles, float sigma, float epsilon, float rcut, float box_size[]) {
+    Vector3 total_force(0.0f, 0.0f, 0.0f);
+
+    for (int j = 0; j < num_particles; ++j) {
+        if ((i != j)) 
+        {
+            Vector3 rij = particles[j].position - particles[i].position;
+            float r2 = rij.squaredNorm();
+            float r = sqrtf(r2);
+            float inv_r2 = 1.0f / r2;
+            float sigma2 = sigma * sigma;
+            float term = sigma2 * inv_r2;          // (sigma/r)^2
+            float B_m = term * term * term;        // (sigma/r)^6
+            float A_n = B_m * B_m;                 // (sigma/r)^12
+            float f_mag = (24.0f * epsilon * (2.0f * A_n - B_m)) * inv_r2;
+            Vector3 f_dir = rij / r;
+            total_force += f_dir * f_mag;
+        }
+    }
+    particles[i].force = total_force;
+}
+
+
+__global__ void compute_lj_forces_rcut(Particle* particles, int num_particles, float sigma, float epsilon, float rcut, float box_size[]) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= num_particles) return;
 
@@ -153,7 +186,7 @@ __global__ void compute_lj_forces(Particle* particles, int num_particles, float 
             }
 
             float r2 = rij.squaredNorm();
-            if (rcut == 0.0f || r2 < rcut_sq)
+            if (rcut == 0.0f || r2 <= rcut_sq)
             {
                 float r = sqrtf(r2);
                 float inv_r2 = 1.0f / r2;
@@ -224,7 +257,7 @@ __global__ void compute_lj_forces_binned( Particle* particles, int num_particles
                     }
                     
                     float r2 = rij.squaredNorm();
-                    if (r2 > rcut_sq) continue;
+                    if (r2 >= rcut_sq) continue;
                     
                     float r = sqrtf(r2);
                     float inv_r2 = 1.0f / r2;
@@ -331,12 +364,12 @@ __host__ void run_simulation(Particle* particles, int num_particles, float dt, f
     switch (method) {
         case MethodType::BASE:
             compute_lj_forces<<<gridSize, blockSize>>>(
-                d_particles, num_particles, sigma, epsilon, 0.0f, box_size_arr
+                d_particles, num_particles, sigma, epsilon
             );
             break;
             
         case MethodType::CUTOFF:
-            compute_lj_forces<<<gridSize, blockSize>>>(
+            compute_lj_forces_rcut<<<gridSize, blockSize>>>(
                 d_particles, num_particles, sigma, epsilon, rcut, box_size_arr
             );
             break;
