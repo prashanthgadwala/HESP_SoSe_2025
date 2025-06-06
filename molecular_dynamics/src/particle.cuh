@@ -1,9 +1,15 @@
 #pragma once
 
+#include "../input/cli.cuh" 
+#include "binning.cuh" 
 #include <iostream>
 #include <cmath>
 #include <cuda_runtime.h>
 #include <string>
+
+// Forward declarations to break circular dependency
+struct DeviceBinningData;
+struct Grid;
 
 struct Vector3 {
     float x, y, z;
@@ -61,9 +67,6 @@ struct Particle {
     float mass;
 };
 
-struct Grid{
-
-};
 
 void load_particles_from_file(const std::string& filename, Particle*& particles, int& num_particles);
 
@@ -75,7 +78,7 @@ __host__ void print_particles(const Particle* particles, int num_particles);
 
 __host__ void print_diagnostics(const Particle* particles, int num_particles);
 
-__host__ void run_simulation(Particle* particles, int num_particles, float dt, float sigma, float epsilon, float rcut, float box_size);
+__host__ void run_simulation(Particle* particles, int num_particles, float dt, float sigma, float epsilon, float rcut, const float box_size[3], MethodType method);
 
 void cleanup_simulation();
 

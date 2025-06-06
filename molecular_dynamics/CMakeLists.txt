@@ -9,7 +9,9 @@ add_executable(molecular_dynamics
   src/main.cu
   src/particle.cu
   input/cli.cu
-  src/vtk_writer.cu  # Now a .cu file
+  src/vtk_writer.cu 
+  src/binning.cu
+  src/neighbour.cu
 )
 
 target_link_libraries(molecular_dynamics PRIVATE stdc++fs)  # For older GCC

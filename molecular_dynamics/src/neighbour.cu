@@ -47,9 +47,6 @@ __global__ void kernel_build_neighbor_list(
     int cy = (cell_idx % (grid.dims.x * grid.dims.y)) / grid.dims.x;
     int cx = cell_idx % grid.dims.x;
 
-    float rcut_sq;
-    cudaMemcpy(&rcut_sq, nb_data.rcut_sq, sizeof(float), cudaMemcpyDeviceToHost);
-
     // Check neighboring cells (3x3x3)
     for (int dz = -1; dz <= 1; dz++) {
         for (int dy = -1; dy <= 1; dy++) {

@@ -131,6 +131,46 @@ __device__ bool in_grid_bounds(int3 coord, int3 dims) {
            coord.z >= 0 && coord.z < dims.z;
 }
 
+
+// this function was used before introducing cell binningm, it has cutoff radius implemented
+__global__ void compute_lj_forces(Particle* particles, int num_particles, float sigma, float epsilon, float rcut, float box_size[]) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= num_particles) return;
+
+    Vector3 total_force(0.0f, 0.0f, 0.0f);
+
+    float rcut_sq = rcut * rcut;
+
+    for (int j = 0; j < num_particles; ++j) {
+        if ((i != j)) 
+        {
+            Vector3 rij = particles[j].position - particles[i].position;
+            // Apply minimum image convention
+            for (int d = 0; d < 3; ++d) {
+                float box_d = box_size[d];
+                if (rij[d] >  0.5f * box_d) rij[d] -= box_d;
+                if (rij[d] < -0.5f * box_d) rij[d] += box_d;
+            }
+
+            float r2 = rij.squaredNorm();
+            if (rcut == 0.0f || r2 < rcut_sq)
+            {
+                float r = sqrtf(r2);
+                float inv_r2 = 1.0f / r2;
+                float sigma2 = sigma * sigma;
+                float term = sigma2 * inv_r2;          // (sigma/r)^2
+                float B_m = term * term * term;        // (sigma/r)^6
+                float A_n = B_m * B_m;                 // (sigma/r)^12
+                float f_mag = (24.0f * epsilon * (2.0f * A_n - B_m)) * inv_r2;
+                Vector3 f_dir = rij / r;
+                total_force += f_dir * f_mag;
+            }
+        }
+    }
+    particles[i].force = total_force;
+}
+
+
 __global__ void compute_lj_forces_binned( Particle* particles, int num_particles, float sigma, float epsilon,  float rcut, float box_size[], const DeviceBinningData bin_data, const Grid grid) 
 {
     int i_sorted = blockIdx.x * blockDim.x + threadIdx.x;
@@ -223,7 +263,7 @@ __global__ void compute_lj_forces_neighbor(
     int neighbor_count = nb_data.num_neighbors[i];
     int* neighbor_list = &nb_data.neighbors[i * nb_data.max_neighbors];
 
-    for (int n = 0; n < neighbor_count; ++n) {
+    for (int n = 0; n < neighbor_count; ++n){
         int j = neighbor_list[n];
         Particle pj = particles[j];
 
@@ -245,7 +285,7 @@ __global__ void compute_lj_forces_neighbor(
 }
 
 
-__host__ void run_simulation(Particle* particles, int num_particles, float dt, float sigma, float epsilon, float rcut, float box_size) 
+__host__ void run_simulation(Particle* particles, int num_particles, float dt, float sigma, float epsilon, float rcut, const float box_size[3], MethodType method) 
 {
     Particle* d_particles;
     size_t size = num_particles * sizeof(Particle);
@@ -256,14 +296,14 @@ __host__ void run_simulation(Particle* particles, int num_particles, float dt, f
     int gridSize = (num_particles + blockSize - 1) / blockSize;
 
     // Prepare box_size array for device kernels
-    float box_size_arr[3] = {box_size, box_size, box_size};
+    float box_size_arr[3] = {box_size[0], box_size[1], box_size[2]};
 
     // Initialize binning structures on first run
     if (first_run && rcut > 0.0f) {
         // Define simulation domain
         AABB domain;
         domain.min = make_float3(0, 0, 0);
-        domain.max = make_float3(box_size, box_size, box_size);
+        domain.max = make_float3(box_size[0], box_size[1], box_size[2]);
         
         // Compute grid dimensions
         grid = compute_grid(domain, rcut);
@@ -287,9 +327,6 @@ __host__ void run_simulation(Particle* particles, int num_particles, float dt, f
         velocity_verlet_step1<<<gridSize, blockSize>>>(d_particles, num_particles, dt, box_size_arr);
         cudaDeviceSynchronize();
     }
-
-    // Force computation
-    MethodType method; 
 
     switch (method) {
         case MethodType::BASE:
@@ -388,42 +425,3 @@ void cleanup_simulation() {
 
 
 
-/*
-// this function was used before introducing cell binningm, it has cutoff radius implemented, but for binning, we need to use different dimensional setting, so its been rewritten 
-__global__ void compute_lj_forces(Particle* particles, int num_particles, float sigma, float epsilon, float rcut, float box_size[]) {
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= num_particles) return;
-
-    Vector3 total_force(0.0f, 0.0f, 0.0f);
-
-    float rcut_sq = rcut * rcut;
-
-    for (int j = 0; j < num_particles; ++j) {
-        if ((i != j)) 
-        {
-            Vector3 rij = particles[j].position - particles[i].position;
-            // Apply minimum image convention
-            for (int d = 0; d < 3; ++d) {
-                float box_d = box_size[d];
-                if (rij[d] >  0.5f * box_d) rij[d] -= box_d;
-                if (rij[d] < -0.5f * box_d) rij[d] += box_d;
-            }
-
-            float r2 = rij.squaredNorm();
-            if (rcut == 0.0f || r2 < rcut_sq)
-            {
-                float r = sqrtf(r2);
-                float inv_r2 = 1.0f / r2;
-                float sigma2 = sigma * sigma;
-                float term = sigma2 * inv_r2;          // (sigma/r)^2
-                float B_m = term * term * term;        // (sigma/r)^6
-                float A_n = B_m * B_m;                 // (sigma/r)^12
-                float f_mag = (24.0f * epsilon * (2.0f * A_n - B_m)) * inv_r2;
-                Vector3 f_dir = rij / r;
-                total_force += f_dir * f_mag;
-            }
-        }
-    }
-    particles[i].force = total_force;
-}
-*/
