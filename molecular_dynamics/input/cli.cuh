@@ -1,8 +1,18 @@
 #pragma once
 #include <string>
 
-enum class TestCaseType { NONE, STABLE, REPULSIVE, ATTRACTIVE };
-enum class MethodType { BASE, CUTOFF, CELL };
+enum class TestCaseType { 
+    NONE, 
+    STABLE, 
+    REPULSIVE, 
+    ATTRACTIVE };
+    
+enum class MethodType {
+    BASE,
+    CUTOFF,
+    CELL,
+    NEIGHBOUR
+};
 
 struct SimulationConfig {
     std::string input_file;

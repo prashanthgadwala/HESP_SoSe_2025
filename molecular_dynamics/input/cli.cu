@@ -43,6 +43,7 @@ void parse_command_line_args(int argc, char** argv, SimulationConfig& config) {
             if (m == "base")        config.method = MethodType::BASE;
             else if (m == "cutoff") config.method = MethodType::CUTOFF;
             else if (m == "cell")   config.method = MethodType::CELL;
+            else if (m == "neighbour") config.method = MethodType::NEIGHBOUR;
         }
 
         else if (strcmp(argv[i], "--help") == 0) {

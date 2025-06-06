@@ -3,6 +3,7 @@
 #include <iostream>
 #include <cmath>
 #include <cuda_runtime.h>
+#include <string>
 
 struct Vector3 {
     float x, y, z;
@@ -74,10 +75,32 @@ __host__ void print_particles(const Particle* particles, int num_particles);
 
 __host__ void print_diagnostics(const Particle* particles, int num_particles);
 
-__host__ void run_simulation(Particle* particles, int num_particles, float dt, float sigma, float epsilon, float rcut, float box_size[]);
+__host__ void run_simulation(Particle* particles, int num_particles, float dt, float sigma, float epsilon, float rcut, float box_size);
 
-__global__ void compute_lj_forces(Particle* particles, int num_particles, float rcut, float box_size[]);
+void cleanup_simulation();
+
+// =====================
+// Device/Kernel functions
+// =====================
+__device__ void update_force(Particle* p);
+
+__device__ void apply_gravity(Particle* p);
 
 __global__ void apply_forces(Particle* particles, int num_particles);
+
+__global__ void velocity_verlet_step1(Particle* particles, int num_particles, float dt, float box_size[]);
+
+__global__ void velocity_verlet_step2(Particle* particles, int num_particles, float dt);
+
+__device__ bool in_grid_bounds(int3 coord, int3 dims);
+
+__global__ void compute_lj_forces_binned(Particle* particles, int num_particles, float sigma, float epsilon, float rcut, float box_size[], const DeviceBinningData bin_data, const Grid grid);
+
+__global__ void compute_lj_forces(Particle* particles, int num_particles, float sigma, float epsilon, float rcut, float box_size[]);
+
+// =====================
+// Utility (if needed)
+// =====================
+// Add any additional declarations here
 
 

@@ -92,6 +92,37 @@ for CASE_NAME in "${!INTERESTING_CASE_PATTERNS[@]}"; do
         --benchmark
 done
 
+METHODS=("base" "cutoff" "cell" "neighbour")
+PARTICLE_COUNTS=(10 25 50 150 250 500)
+RCUT=2.5  # In units of sigma
+
+echo -e "\n[INFO] Running Performance Benchmarks"
+for METHOD in "${METHODS[@]}"; do
+    for N in "${PARTICLE_COUNTS[@]}"; do
+        INPUT_FILE="$INPUT_DIR/particles/particles_$N.txt"
+        OUTPUT_PATH="$OUTPUT_DIR/Performance/$METHOD/$N"
+        BENCHMARK_PATH="$BENCHMARK_DIR/$METHOD"
+        
+        mkdir -p "$OUTPUT_PATH"
+        mkdir -p "$BENCHMARK_PATH/csv"
+        
+        echo "[INFO] Running $N particles with $METHOD method..."
+        
+        ./build/molecular_dynamics \
+            --input "$INPUT_FILE" \
+            --steps 1000 \
+            --dt 0.001 \
+            --sigma 0.0501 \
+            --epsilon 0.015 \
+            --rcut $(awk "BEGIN {print $RCUT * 0.0501}") \
+            --method "$METHOD" \
+            --box 10.0 10.0 10.0 \
+            --output "$OUTPUT_PATH" \
+            --freq 100 \
+            --benchmark
+    done
+done
+
 echo -e "\n[INFO] Collecting benchmark CSVs..."
 # Copy all benchmark CSVs to central location
 find "$OUTPUT_DIR" -name "benchmark_*.csv" -exec cp {} "$BENCHMARK_DIR/csv/" \;
@@ -110,7 +141,7 @@ else
     echo "[WARNING] No benchmark files found for analysis"
 fi
 
-echo -e "\n[INFO] Performance Analysis Summary"
+echo -e "\n[INFO] Performance Analysis Summary - Implementation of MD"
 echo "======================================"
 
 # Show particle count vs performance summary
@@ -127,6 +158,21 @@ for csv_file in "$BENCHMARK_DIR"/csv/benchmark_*.csv; do
             printf "%13s | %s ms\n" "$PARTICLES" "$MEAN_TIME"
         fi
     fi
+done
+
+echo -e "\n[INFO] Performance Comparison Summary - Accelaration Techniques"
+echo "======================================"
+
+echo "Method | Particles | Mean Time (ms)"
+echo "----------------------------------"
+for METHOD in "${METHODS[@]}"; do
+    for N in "${PARTICLE_COUNTS[@]}"; do
+        CSV_FILE="$BENCHMARK_DIR/$METHOD/csv/benchmark_${N}_*.csv"
+        if [ -f $CSV_FILE ]; then
+            MEAN_TIME=$(awk -F, 'NR>1 {sum+=$2; count++} END {print sum/count}' $CSV_FILE)
+            printf "%-7s| %-10d| %.3f ms\n" "$METHOD" "$N" "$MEAN_TIME"
+        fi
+    done
 done
 
 echo -e "\n[INFO] Done!"
