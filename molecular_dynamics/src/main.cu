@@ -139,7 +139,7 @@ int main(int argc, char** argv) {
     std::cout << "========== Simulation Configuration ==========\n";
 
     // Initial force computation (step 0)
-    run_simulation(particles, num_particles, 0.0f, sigma, epsilon, rcut, box_size, method);
+    run_simulation(particles, num_particles, 0.0f, sigma, epsilon, rcut, box_size);
 
     // Main simulation loop with proper timing
     for (int step = 0; step < num_steps; ++step) {
@@ -149,7 +149,7 @@ int main(int argc, char** argv) {
         }
 
         // Run the actual simulation step
-        run_simulation(particles, num_particles, dt, sigma, epsilon, rcut, box_size, method);
+        run_simulation(particles, num_particles, dt, sigma, epsilon, rcut, box_size);
 
         // End timing for this step
         if (log_csv) {
