@@ -4,6 +4,7 @@ project(MolecularDynamics LANGUAGES C CXX CUDA)
 set(CMAKE_CXX_STANDARD 17)  # Enforce C++17
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_STANDARD 14)  # CUDA standard remains 14
+set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
 
 add_executable(molecular_dynamics
   src/main.cu
