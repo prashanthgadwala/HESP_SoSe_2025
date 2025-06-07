@@ -1,4 +1,10 @@
 #!/bin/bash
+#SBATCH --partition=a100
+#SBATCH --gres=gpu:a100:1
+#SBATCH --time=00:10:00
+#SBATCH --job-name=md_sim
+#SBATCH --output=md_sim.out
+
 set -e
 
 INPUT_DIR="input"
