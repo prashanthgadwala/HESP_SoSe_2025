@@ -4,7 +4,6 @@
 #include <thrust/device_vector.h>
 #include "particle.cuh"
 
-struct Particle;
 
 /*
  * Axis-Aligned Bounding Box (AABB) for simulation domain

@@ -1,5 +1,6 @@
 #pragma once
 #include "binning.cuh"
+#include "particle.cuh"
 
 struct DeviceNeighborData {
     int* neighbors;       // Flattened neighbor lists
