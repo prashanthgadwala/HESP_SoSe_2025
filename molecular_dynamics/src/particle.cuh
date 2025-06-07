@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cuda_runtime.h>
 #include <string>
+#include "neighbour.cuh"
 
 // Forward declarations to break circular dependency
 struct DeviceBinningData;
@@ -103,14 +104,7 @@ __global__ void compute_lj_forces_rcut(Particle* particles, int num_particles, f
 
 __global__ void compute_lj_forces(Particle* particles, int num_particles, float sigma, float epsilon);
 
-__global__ void compute_lj_forces_neighbor(
-    Particle* particles, 
-    int num_particles, 
-    float sigma, 
-    float epsilon, 
-    const DeviceNeighborData nb_data,
-    float box_size[]
-)
+__global__ void compute_lj_forces_neighbor(Particle* particles, int num_particles, float sigma, float epsilon, const DeviceNeighborData nb_data, float box_size[]);
 
 
 // =====================
