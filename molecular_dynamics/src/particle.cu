@@ -308,8 +308,6 @@ __global__ void compute_lj_forces_neighbor(
 
         float r2 = rij.squaredNorm();
         if (r2 < 1e-12f) continue;
-
-        float r2 = rij.squaredNorm();
         float r6 = r2 * r2 * r2;
         float r12 = r6 * r6;
         float f_scalar = 24.0f * epsilon * (2.0f * sigma12 / r12 - sigma6 / r6) / r2;
