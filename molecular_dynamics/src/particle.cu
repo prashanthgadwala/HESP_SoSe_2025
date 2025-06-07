@@ -281,7 +281,7 @@ __global__ void compute_lj_forces_neighbor(
     int num_particles, 
     float sigma, 
     float epsilon, 
-    const DeviceNeighborData* nb_data,
+    DeviceNeighborData nb_data,
     float box_size[]
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -293,8 +293,8 @@ __global__ void compute_lj_forces_neighbor(
     float sigma6 = powf(sigma, 6);
     float sigma12 = sigma6 * sigma6;
 
-    int neighbor_count = nb_data->num_neighbors[i];
-    int* neighbor_list = &nb_data->neighbors[i * nb_data->max_neighbors];
+    int neighbor_count = nb_data.num_neighbors[i];
+    int* neighbor_list = &nb_data.neighbors[i * nb_data.max_neighbors];
 
     for (int n = 0; n < neighbor_count; ++n){
         int j = neighbor_list[n];
@@ -395,7 +395,7 @@ __host__ void run_simulation(Particle* particles, int num_particles, float dt, f
             build_binning(bin_data, d_particles, grid);
             build_neighbor_list(nb_data, d_particles, bin_data, grid, rcut, box_size_arr);
             compute_lj_forces_neighbor<<<gridSize, blockSize>>>(
-                d_particles, num_particles, sigma, epsilon, &nb_data, box_size_arr
+                d_particles, num_particles, sigma, epsilon, nb_data, box_size_arr
             );
             break;
     }
