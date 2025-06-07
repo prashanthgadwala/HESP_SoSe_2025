@@ -79,7 +79,7 @@ __host__ void print_particles(const Particle* particles, int num_particles);
 
 __host__ void print_diagnostics(const Particle* particles, int num_particles);
 
-__host__ void run_simulation(Particle* particles, int num_particles, float dt, float sigma, float epsilon, float rcut, const float box_size[3]);
+__host__ void run_simulation(Particle* particles, int num_particles, float dt, float sigma, float epsilon, float rcut, const float box_size[3], MethodType method);
 
 void cleanup_simulation();
 
@@ -104,7 +104,7 @@ __global__ void compute_lj_forces_rcut(Particle* particles, int num_particles, f
 
 __global__ void compute_lj_forces(Particle* particles, int num_particles, float sigma, float epsilon);
 
-__global__ void compute_lj_forces_neighbor(Particle* particles, int num_particles, float sigma, float epsilon, const DeviceNeighborData nb_data, float box_size[], MethodType method);
+__global__ void compute_lj_forces_neighbor(Particle* particles, int num_particles, float sigma, float epsilon, const DeviceNeighborData nb_data, float box_size[]);
 
 
 // =====================
