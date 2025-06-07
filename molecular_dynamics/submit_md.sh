@@ -6,12 +6,11 @@
 #SBATCH --output=md_sim.out
 
 # Load modules if needed
-module load cuda/12.2
 module load cuda/12.5.1 
 module load nvhpc/23.5 
 module load gcc/12.1.0
 module load cmake/3.21.4
-module avail python/3.12-conda
+module load python/3.12-conda
 
 # Run your workflow
 bash run_all.sh
