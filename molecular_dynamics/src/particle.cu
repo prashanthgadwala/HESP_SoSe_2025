@@ -318,7 +318,7 @@ __global__ void compute_lj_forces_neighbor(
 }
 
 
-__host__ void run_simulation(Particle* particles, int num_particles, float dt, float sigma, float epsilon, float rcut, const float box_size[3], MethodType method) 
+__host__ void run_simulation(Particle* particles, int num_particles, float dt, float sigma, float epsilon, float rcut, const float box_size[3]) 
 {
     Particle* d_particles;
     size_t size = num_particles * sizeof(Particle);
