@@ -29,7 +29,7 @@ for TEST_CASE in stable repulsive attractive; do
     --dt 0.01 \
     --steps 100 \
     --output "$OUTPUT_PATH" \
-    --freq 100\
+    --freq 10\
     --benchmark
 done
 
@@ -57,7 +57,7 @@ for N in "${PARTICLE_COUNTS[@]}"; do
     --sigma 0.0501 \
     --epsilon 0.015 \
     --output "$OUTPUT_PATH" \
-    --freq 100\
+    --freq 10\
     --benchmark
 done
 
@@ -88,7 +88,7 @@ for CASE_NAME in "${!INTERESTING_CASE_PATTERNS[@]}"; do
         --sigma 0.0501 \
         --epsilon 0.015 \
         --output "$OUTPUT_PATH" \
-        --freq 100\
+        --freq 10\
         --benchmark
 done
 
@@ -118,7 +118,7 @@ for METHOD in "${METHODS[@]}"; do
             --method "$METHOD" \
             --box 10.0 10.0 10.0 \
             --output "$OUTPUT_PATH" \
-            --freq 100 \
+            --freq 10 \
             --benchmark
     done
 done
