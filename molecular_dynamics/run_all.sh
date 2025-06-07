@@ -114,7 +114,7 @@ for METHOD in "${METHODS[@]}"; do
             --dt 0.001 \
             --sigma 0.0501 \
             --epsilon 0.015 \
-            --rcut $(awk -v r="$RCUT" 'BEGIN {print r * 0.0501}') \
+            --rcut $(awk "BEGIN {print $RCUT * 0.0501}") \
             --method "$METHOD" \
             --box 10.0 10.0 10.0 \
             --output "$OUTPUT_PATH" \
