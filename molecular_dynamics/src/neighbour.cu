@@ -2,6 +2,7 @@
 #include "neighbour.cuh"
 #include <thrust/sort.h>
 #include <thrust/device_ptr.h>
+#include "particle.cuh"
 
 // Define max_particles_per_cell if not defined elsewhere
 #ifndef max_particles_per_cell
